@@ -23,6 +23,10 @@ for _ in range(2):
     print('Cliente conectado:', client_address)
     clients.append(client_socket)
 
+#Serve para determinar quem começa
+clients[0].sendall("1".encode('utf-8'))
+clients[1].sendall("0".encode('utf-8'))
+
 # Jogo da velha
 matriz = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
 
@@ -82,11 +86,13 @@ def XO(aux):
         return 'O'
 
 
-def printm():
-    print(XO(matriz[0][0]), " ", XO(matriz[0][1]), " ", XO(matriz[0][2]))
-    print(XO(matriz[1][0]), " ", XO(matriz[1][1]), " ", XO(matriz[1][2]))
-    print(XO(matriz[2][0]), " ", XO(matriz[2][1]), " ", XO(matriz[2][2]))
+def printm(i):
 
+    string = "JOGADA" + str(i) + '\n'
+    string = string + XO(matriz[0][0]) + " " + XO(matriz[0][1]) + " " + XO(matriz[0][2]) + '\n'
+    string = string + XO(matriz[1][0]) + " " + XO(matriz[1][1]) + " " + XO(matriz[1][2]) + '\n'
+    string = string + XO(matriz[2][0]) + " " + XO(matriz[2][1]) + " " + XO(matriz[2][2]) + '\n'
+    return string 
 
 turn = 0
 fim = False
@@ -118,20 +124,33 @@ while True:
 
             if turn == 9:
                 print("Velha")
+                clients[0].sendall(('\0'+"Deu Velha!").encode('utf-8'))
+                clients[1].sendall(('\0'+"Deu Velha!").encode('utf-8'))
+
             else:
-                print("jogada", turn + 1)
-                print('Jogada recebida:', l, c)
+
+                print("jogada ", turn + 1)
+                print('Jogada recebida: ', l, c)
                 linha = l
                 coluna = c
                 if matriz[l][c] == 0:
                     matriz[l][c] = pow(-1, turn + 1)
-                    printm()
+                    matrix = printm(turn) 
+                    print(matrix)                   
+                    clients[0].sendall(('\0'+matrix +'\0').encode('utf-8'))
+                    clients[1].sendall(('\0'+matrix +'\0').encode('utf-8'))
                     if Teste():
                         print("O ganhador é o jogador:", turn + 1)
+                        clients[0].sendall(('\n',"O ganhador é o jogador:", turn + 1).encode('utf-8'))
+                        clients[1].sendall(('\n',"O ganhador é o jogador:", turn + 1).encode('utf-8'))
+
                         fim = True
                     turn += 1
                 else:
                     print("Localização já preenchida")
+                    clients[turn%2].sendall(('\n',"Localizacao ja preenchida",'\n').encode('utf-8'))
+                
+                    
 
     except json.JSONDecodeError:
         print('Erro ao decodificar a mensagem JSON.')
